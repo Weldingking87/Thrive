@@ -1,11 +1,15 @@
 # Thrive backend
-Hack The Nest 2026. Base44 is the shared frontend; this Git repository holds the custom backend.
-## Local setup
-Node.js 22.12+ or newer supported LTS, Git and VS Code.
-Run npm ci when a lockfile exists, otherwise npm install. Copy server/.env.example to server/.env only if it does not exist. Fill secrets locally, never in chat or Git.
-Run npm run check, then npm run dev. Health: http://127.0.0.1:3001/api/health.
-Server is a local starter: /api/analyze intentionally returns 503 NOT_IMPLEMENTED. No cloud providers are connected.
-Before deployment: implement authentication and ownership checks, validate requests, add size/rate limits, configure only the actual Base44 origin, deploy with HTTPS, and test provider calls.
-The local listener is loopback-only; configure deployment networking explicitly with a reverse proxy when hosting. Base44's hosted frontend cannot reach a developer's localhost.
-Jayden owns Base44 dashboard/analysis screens; Lakyndra owns Base44 Profile/Food Log pages. Joshua owns backend integration. Base44 Git sync, if used, should use a separate frontend repo; do not connect it to overwrite this backend.
-Submission draft midnight Nov 14 into Nov 15 Eastern; final noon Nov 15 Eastern. Public repo and <=3 minute video; disclose AI tools.
+Hack The Nest 2026. Shared Base44 frontend plus custom Node.js backend.
+
+## Run
+Use Node.js 22.12+ or a newer supported LTS. `npm ci`, copy server/.env.example to server/.env only if absent, then configure locally. `npm test` runs offline tests; `npm run dev` starts the server. No secrets should be posted in chat or committed.
+
+Read [Service setup](docs/SERVICE-SETUP.md) for Windows configuration and SSOJet login, then [API contract](docs/API-CONTRACT.md) for Jayden's frontend wiring.
+
+Implemented: SSOJet server-side OIDC session flow, authenticated service routes, OpenAI Responses frame analysis, Exa search, ElevenLabs speech, MongoDB profiles/food logs/analysis persistence. No live provider credentials were available during development; end-to-end login, generation, persistence and hosted Base44 access still need verification.
+
+`npm run check:services` checks configuration without requests. `npm run verify:services` performs limited live checks, including an Exa search that may consume credits; it never prints credentials.
+
+Video input is selected still frames, not full-video upload. TTS is implemented; speech-to-text is not. Base44 cross-site session cookies must be tested in the actual deployment/browser.
+
+Joshua owns backend. Jayden owns Base44 dashboard/analysis screens, Lakyndra owns Profile/Food Log and demo testing, K Muhammad is captain/CTF. Work on feature branches and open PRs; do not overwrite main or connect Base44 Git sync to this backend repo.
