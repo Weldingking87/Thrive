@@ -5,6 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file=.env --watch src/index.js",
-    "start": "node --env-file=.env src/index.js"
+    "start": "node --env-file=.env src/index.js",
+    "test": "node --test",
+    "check:services": "node --env-file=.env scripts/check-services.js",
+    "verify:services": "node --env-file=.env scripts/check-services.js --live"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "express-openid-connect": "^3.4.0",
+    "express-rate-limit": "^8.7.4",
+    "mongodb": "^7.9.0"
   }
 }
