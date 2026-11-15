@@ -87,6 +87,8 @@ export function createApp({env = process.env, services = createServices(env), au
     if (env.SESSION_SECRET.length < 32) throw Error('SESSION_SECRET must contain at least 32 characters.');
     app.use(oidc.auth({authRequired:false, auth0Logout:false, issuerBaseURL:env.SSOJET_ISSUER,
       baseURL:backend, clientID:env.SSOJET_CLIENT_ID, clientSecret:env.SSOJET_CLIENT_SECRET, secret:env.SESSION_SECRET,
+      // Match the SSOJet application's Client Secret (POST) setting.
+      clientAuthMethod:'client_secret_post',
       authorizationParams:{response_type:'code',scope:'openid profile email'},
       routes:{login:false, logout:false, callback:'/callback'},
       session:{cookie:{secure, httpOnly:true, sameSite:secure ? 'None' : 'Lax'}},
