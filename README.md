@@ -11,6 +11,7 @@ Thrive is an AI-powered training companion created for Hack The Nest 2026. It he
 - **Backend API:** https://api.thrive.select
 - **Health endpoint:** https://api.thrive.select/api/health
 - **Repository:** https://github.com/Weldingking87/Thrive
+- **youtube Video:** https://youtu.be/wpbmezi85f0
 
 ## How Thrive works
 
