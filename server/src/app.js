@@ -32,6 +32,28 @@ export function configuration(env) {
   const groups = {ssojet: ['SSOJET_ISSUER','SSOJET_CLIENT_ID','SSOJET_CLIENT_SECRET','SESSION_SECRET','BACKEND_URL','FRONTEND_ORIGIN'], openai: ['OPENAI_API_KEY','OPENAI_MODEL'], exa: ['EXA_API_KEY'], elevenlabs: ['ELEVENLABS_API_KEY','ELEVENLABS_VOICE_ID'], mongodb: ['MONGODB_URI']};
   return Object.fromEntries(Object.entries(groups).map(([k, keys]) => [k, {configured: keys.every(key => Boolean(env[key])), liveVerified: false}]));
 }
+export function authDiagnostic(err, req) {
+  const message = String(err.error_description || err.message || '').toLowerCase();
+  const rawCode = String(err.error || err.code || '');
+  const allowed = /^(invalid_client|invalid_grant|invalid_request|unauthorized_client|access_denied|login_required|interaction_required|consent_required|server_error|temporarily_unavailable|unsupported_response_type|invalid_scope|OAUTH_[A-Z_]+|ERR_[A-Z_]+)$/;
+  let category = 'UNCLASSIFIED_AUTH_ERROR';
+  if (/cookie not found|cookie.*missing/.test(message)) category = 'LOGIN_COOKIE_MISSING';
+  else if (/state/.test(message)) category = 'STATE_CHECK_FAILED';
+  else if (/nonce/.test(message)) category = 'NONCE_CHECK_FAILED';
+  else if (/invalid_client|client authentication/.test(message + rawCode)) category = 'CLIENT_CREDENTIALS_REJECTED';
+  else if (/invalid_grant/.test(message + rawCode)) category = 'CODE_EXCHANGE_REJECTED';
+  else if (/issuer|iss.*claim/.test(message)) category = 'ISSUER_CHECK_FAILED';
+  else if (/audience|aud.*claim/.test(message)) category = 'AUDIENCE_CHECK_FAILED';
+  else if (/signature|jwks|signing|algorithm/.test(message)) category = 'TOKEN_SIGNATURE_CHECK_FAILED';
+  else if (/id_token|id token/.test(message)) category = 'ID_TOKEN_CHECK_FAILED';
+  else if (/redirect/.test(message)) category = 'REDIRECT_CHECK_FAILED';
+  else if (/fetch|network|timeout|timed out/.test(message)) category = 'PROVIDER_NETWORK_ERROR';
+  else if (/code/.test(message)) category = 'AUTHORIZATION_CODE_CHECK_FAILED';
+  return {category, providerCode: allowed.test(rawCode) ? rawCode : null,
+    hasCode: typeof req.query?.code === 'string', hasState: typeof req.query?.state === 'string',
+    hasError: typeof req.query?.error === 'string',
+    hasCookies: Boolean(req.headers?.cookie)};
+}
 export function createApp({env = process.env, services = createServices(env), authenticate} = {}) {
   const app = express();
   app.disable('x-powered-by');
@@ -124,6 +146,11 @@ export function createApp({env = process.env, services = createServices(env), au
   app.use((req,res) => res.status(404).json({error:{code:'NOT_FOUND',message:'Route not found'}}));
   app.use((err,req,res,next) => {
     if(res.headersSent) return next(err);
+    if (req.path === '/callback' || req.path === '/login') {
+      const diagnostic = authDiagnostic(err, req);
+      console.error('Thrive authentication diagnostic:', JSON.stringify(diagnostic));
+      return res.status(400).json({error:{code:'AUTH_FLOW_FAILED',message:'Sign-in failed. Share only this diagnostic, not the callback address.',diagnostic}});
+    }
     const known = err instanceof AppError;
     const tooLarge = err.type === 'entity.too.large';
     const malformed = err.type === 'entity.parse.failed';

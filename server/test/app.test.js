@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createApp} from '../src/app.js';
+import {createApp, authDiagnostic} from '../src/app.js';
 import {createServices} from '../src/services.js';
 const origin='https://thrive.example';
 const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlSIAAAAASUVORK5CYII=';
@@ -67,4 +67,14 @@ test('configured OIDC app rejects requests without a session',async()=>{
   const response=await fetch(`${base}/api/me`);
   assert.equal(response.status,401);
  });
+});
+
+test('auth diagnostics expose only fixed categories and parameter presence',()=>{
+ const req={query:{code:'private-code',state:'private-state'},headers:{cookie:'private-cookie'}};
+ const result=authDiagnostic({message:'auth_verification cookie not found. private-secret',error:'private-token'},req);
+ assert.equal(result.category,'LOGIN_COOKIE_MISSING');assert.equal(result.providerCode,null);
+ assert.equal(result.hasCode,true);assert.equal(result.hasState,true);
+ assert.ok(!JSON.stringify(result).includes('private'));
+ assert.equal(authDiagnostic({message:'nonce mismatch'},req).category,'NONCE_CHECK_FAILED');
+ assert.equal(authDiagnostic({error:'invalid_client'},req).category,'CLIENT_CREDENTIALS_REJECTED');
 });
